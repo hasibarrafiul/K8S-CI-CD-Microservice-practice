@@ -33,7 +33,7 @@ jobs:
           - service_name: frontend
             context: ./frontend
             dockerfile: frontend/Dockerfile
-            image_name: hasib-frontend
+            image_name: frontend
             yaml_path: k8s/frontend.yaml
 
     steps:
