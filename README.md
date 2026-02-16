@@ -1,87 +1,83 @@
-🚀 Hasib Platform: Cloud Recovery Guide
-This guide explains how to recreate the entire Kubernetes environment on Azure AKS and redeploy the application using Argo CD.
+# 🚀 Hasib Platform: Cloud Infrastructure & Deployment
 
-📋 Prerequisites
-Azure CLI installed and logged in (az login).
+This repository contains the full GitOps pipeline for the Hasib Platform, running on **Azure Kubernetes Service (AKS)** and managed by **Argo CD**.
 
-kubectl installed.
+---
 
-GitHub Repository containing your k8s/ folder and deploy.yml.
+## 🏗 1. Infrastructure Setup (Azure)
 
-Docker Hub account with your images already pushed.
+Run these commands to recreate your cluster from scratch.
 
-🛠 Step 1: Create the Azure Infrastructure
-First, recreate the Resource Group and the AKS Cluster.
-
-Bash
-# 1. Create Resource Group
+```bash
+# Create the Resource Group
 az group create --name hasib-platform-rg --location westus2
 
-# 2. Create AKS Cluster (1 Node is enough for practice)
+# Create the AKS Cluster (Single Node for practice)
 az aks create \
     --resource-group hasib-platform-rg \
     --name hasib-aks-cluster \
     --node-count 1 \
     --generate-ssh-keys
 
-# 3. Connect your local terminal to the new cluster
+# Connect your local kubectl to Azure
 az aks get-credentials --resource-group hasib-platform-rg --name hasib-aks-cluster --overwrite-existing
-🎡 Step 2: Install Argo CD
-Now that the cluster is alive, we need to install the "Brain" that manages the deployments.
+```
 
-Bash
-# 1. Create the namespace for Argo CD
+---
+
+## 🎡 2. Install Argo CD
+
+Argo CD acts as the "Controller" that keeps your cluster in sync with this GitHub repo.
+
+```bash
+# Create namespace and install
 kubectl create namespace argocd
+kubectl apply -n argocd -f [https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml](https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml)
 
-# 2. Install Argo CD
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
-# 3. Access the Argo CD UI (Change Service type to LoadBalancer)
+# Expose the Argo CD UI via a LoadBalancer
 kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "LoadBalancer"}}'
-To Log In:
+```
 
-Get the External IP: kubectl get svc argocd-server -n argocd
-
-Get the default password:
-
-Bash
+### 🔑 Get Argo CD Credentials
+1. **URL:** Run `kubectl get svc argocd-server -n argocd` and find the `EXTERNAL-IP`.
+2. **Username:** `admin`
+3. **Password:** Run the following to decode the initial secret:
+```bash
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 --decode
-Login at the IP with username: admin and the password above.
+```
 
-🔗 Step 3: Connect your GitHub Repo to Argo CD
-In the Argo CD UI, click + New App.
+---
 
-Application Name: hasib-platform
+## 🔗 3. Connect the Application
 
-Project: default
+1. Log into the Argo CD UI.
+2. Click **+ New App** and enter:
+   * **Application Name:** `hasib-platform`
+   * **Project:** `default`
+   * **Sync Policy:** `Automatic` (Check 'Prune' and 'Self-Heal')
+   * **Repository URL:** `[YOUR_GITHUB_REPO_URL]`
+   * **Path:** `k8s`
+   * **Cluster URL:** `https://kubernetes.default.svc`
+   * **Namespace:** `default`
+3. Click **Create** and watch the pods go green!
 
-Sync Policy: Automatic (Check 'Prune Resources' and 'Self Heal').
+---
 
-Source:
+## 🛠 4. Common Troubleshooting Commands
 
-Repository URL: Your GitHub Repo URL.
+| Goal | Command |
+| :--- | :--- |
+| **Check Pods** | `kubectl get pods` |
+| **View Logs** | `kubectl logs -f deployment/frontend` |
+| **Force Restart** | `kubectl rollout restart deployment frontend` |
+| **Describe Pod** | `kubectl describe pod <pod_name>` |
 
-Path: k8s (This points to the folder where your .yaml files live).
+---
 
-Destination:
+## 🛑 5. Cleanup (Stop Billing)
 
-Cluster URL: https://kubernetes.default.svc
+When you are done for the day, delete the resource group to stop all charges.
 
-Namespace: default
-
-Click Create.
-
-🧪 Step 4: Verify Deployment
-Once Argo CD finishes syncing, verify your pods are running:
-
-Bash
-kubectl get pods
-kubectl get svc
-Copy the EXTERNAL-IP of the frontend-service and paste it into your browser.
-
-📝 Important Maintenance Notes
-Updating Code: Just git push to your main branch. GitHub Actions will build the new image, update the YAML, and Argo CD will automatically pull the change.
-
-CORS/DNS: If your Azure Load Balancer IP changes after recreation, you must update your GitHub Secrets and re-run the CI/CD to update the API URLs in the frontend.
-
-Shutting Down: To save money, run az group delete --name hasib-platform-rg --yes --no-wait.
+```bash
+az group delete --name hasib-platform-rg --yes --no-wait
+```
