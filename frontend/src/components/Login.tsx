@@ -28,7 +28,7 @@ export const Login = ({ onSwitch }: { onSwitch: () => void }) => {
       <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <Paper elevation={3} sx={{ p: 4, width: '100%', borderRadius: 2 }}>
           <Typography component="h1" variant="h5" align="center" gutterBottom sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-            Hasib Platform
+            Hasib Platform v2.0
           </Typography>
           <Typography variant="body2" align="center" sx={{ mb: 3, color: 'text.secondary' }}>
             Sign in to manage your microservices
