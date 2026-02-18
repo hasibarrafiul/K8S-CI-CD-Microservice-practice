@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { User } from './entities/user.entity';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
+import { HealthModule } from '../health/health.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { JwtStrategy } from './jwt.strategy';
       synchronize: true, // Set to false in production!
     }),
     TypeOrmModule.forFeature([User]),
+    HealthModule, // ✅ Added Health Module
   ],
   controllers: [UserController],
   providers: [UserService, JwtStrategy],
