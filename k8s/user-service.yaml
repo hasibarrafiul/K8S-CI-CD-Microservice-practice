@@ -25,20 +25,42 @@ spec:
         app: user-service
     spec:
       containers:
-      - name: user-service
-        image: hasibarrafiulfahim/hasib-user:64a606059aac66ab8e7e6b6ab7d44d9a75a496b0
-        env:
-        - name: DB_HOST
-          value: "postgres-service"
-        - name: DB_PORT
-          value: "5432"
-        - name: DB_USER
-          value: "postgres"
-        - name: DB_PASSWORD
-          value: "password"
-        - name: DB_NAME
-          value: "hasib_db"
-        - name: JWT_SECRET
-          value: "supersecret"
-        - name: RABBITMQ_URL
-          value: "amqp://rabbitmq-service:5672"
+        - name: user-service
+          image: hasibarrafiulfahim/hasib-user:64a606059aac66ab8e7e6b6ab7d44d9a75a496b0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          env:
+            - name: DB_HOST
+              value: "postgres-service"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              value: "postgres"
+            - name: DB_PASSWORD
+              value: "password"
+            - name: DB_NAME
+              value: "hasib_db"
+            - name: JWT_SECRET
+              value: "supersecret"
+            - name: RABBITMQ_URL
+              value: "amqp://rabbitmq-service:5672"
